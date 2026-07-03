@@ -1,14 +1,17 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import * as express from 'express';
 import { toNodeHandler } from 'better-auth/node';
 import { AppModule } from './app.module';
 import { AuthService } from './lib/auth/auth.service';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   const configService = app.get(ConfigService);
   const frontendUrl = configService.get<string>('FRONTEND_URL');
+
+  app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector)));
 
   app.enableCors({
     origin: frontendUrl ? [frontendUrl] : false,
