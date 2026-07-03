@@ -12,10 +12,7 @@ export interface AuthEnv {
   githubClientSecret?: string;
 }
 
-export function createAuthOptions(
-  prisma: PrismaClient,
-  env: AuthEnv,
-): BetterAuthOptions {
+export function createAuthOptions(prisma: PrismaClient, env: AuthEnv) {
   return {
     secret: env.secret,
     baseURL: env.baseURL,
@@ -32,11 +29,20 @@ export function createAuthOptions(
         clientSecret: env.githubClientSecret ?? '',
       },
     },
+    user: {
+      additionalFields: {
+        role: {
+          type: ['PARTICIPANT', 'ADMIN'] as const,
+          input: false,
+          defaultValue: 'PARTICIPANT',
+        },
+      },
+    },
     advanced: {
       defaultCookieAttributes: {
         sameSite: 'none',
         secure: true,
       },
     },
-  };
+  } satisfies BetterAuthOptions;
 }
