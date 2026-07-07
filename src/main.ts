@@ -1,15 +1,40 @@
+import {
+  BadRequestException,
+  ValidationPipe,
+  type ValidationError,
+} from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import * as express from 'express';
-import { toNodeHandler } from 'better-auth/node';
 import { AppModule } from './app.module';
-import { AuthService } from './lib/auth/auth.service';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
+function flattenValidationErrors(
+  errors: ValidationError[],
+): { property: string; message: string }[] {
+  return errors.flatMap((error) => {
+    if (error.constraints) {
+      return Object.values(error.constraints).map((message) => ({
+        property: error.property,
+        message,
+      }));
+    }
+    return flattenValidationErrors(error.children ?? []);
+  });
+}
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const frontendUrl = configService.get<string>('FRONTEND_URL');
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      exceptionFactory: (errors) =>
+        new BadRequestException(flattenValidationErrors(errors)),
+    }),
+  );
 
   app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector)));
 
@@ -17,14 +42,6 @@ async function bootstrap() {
     origin: frontendUrl ? [frontendUrl] : false,
     credentials: true,
   });
-
-  // Better Auth reads the raw request body itself, so its routes must be
-  // mounted before the JSON body parser consumes the stream.
-  const authService = app.get(AuthService);
-  app.use('/api/auth/{*splat}', toNodeHandler(authService.instance));
-
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
 
   await app.listen(process.env.PORT ?? 3000);
 }

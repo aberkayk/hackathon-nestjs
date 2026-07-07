@@ -1,12 +1,12 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { BetterAuthGuard } from 'nestjs-better-auth';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Role } from '../../generated/prisma/enums';
 import { UserService } from './user.service';
 
 @Controller('user')
-@UseGuards(AuthGuard)
+@UseGuards(BetterAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 

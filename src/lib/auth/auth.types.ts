@@ -1,5 +1,6 @@
-import type { AuthService } from './auth.service';
+import type { Auth } from 'better-auth';
+import type { createAuthOptions } from './auth.options';
 
-export type AuthSession = NonNullable<
-  Awaited<ReturnType<AuthService['instance']['api']['getSession']>>
->;
+export type AuthInstance = Auth<ReturnType<typeof createAuthOptions>>;
+
+export type AuthSession = AuthInstance['$Infer']['Session'];
