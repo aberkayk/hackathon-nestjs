@@ -62,4 +62,15 @@ export class HackathonController {
   remove(@Param('id') id: string) {
     return this.hackathonService.remove(id);
   }
+
+  @Post(':id/join')
+  @UseGuards(RolesGuard)
+  @Roles(Role.PARTICIPANT)
+  @ResponseMessage('Joined hackathon')
+  join(
+    @Param('id') id: string,
+    @CurrentUserSession('user') user: AuthSession['user'],
+  ) {
+    return this.hackathonService.join(id, user.id);
+  }
 }
